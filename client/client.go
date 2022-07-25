@@ -13,13 +13,6 @@ import (
 )
 
 type (
-	Message struct {
-		Topic    string
-		Qos      byte
-		Retained bool
-		Payload  interface{}
-	}
-
 	Pusher struct {
 		clients []*pusher
 		group   *service.ServiceGroup
@@ -108,6 +101,7 @@ func (p *pusher) startPusher() {
 		p.pushers.Run(
 			func() {
 				for msg := range channel {
+					logx.Infow("待发送的数据", logx.Field("data", msg.String()))
 					token := p.cli.Publish(msg.Topic, msg.Qos, msg.Retained, msg.Payload)
 					if token.Wait() && token.Error() != nil {
 						logx.Error(token.Error())
