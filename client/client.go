@@ -3,8 +3,8 @@ package client
 import (
 	"strconv"
 	"sync"
-	"sync/atomic"
 
+	"github.com/cespare/xxhash"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/open-unbounded/mqtt-sdk/config"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -65,7 +65,8 @@ func (p *Pusher) Stop() {
 }
 
 func (p *Pusher) Add(message Message) {
-	i := atomic.AddInt64(&p.size, 1) % int64(len(p.clients))
+	hashCode := xxhash.Sum64String(message.Topic)
+	i := hashCode % uint64(len(p.clients))
 	p.clients[i].Add(message)
 }
 
@@ -136,6 +137,7 @@ func (p *pusher) Stop() {
 }
 
 func (p *pusher) Add(message Message) {
-	i := atomic.AddInt64(&p.size, 1) % int64(len(p.channels))
+	hashCode := xxhash.Sum64String(message.Topic)
+	i := hashCode % uint64(len(p.channels))
 	p.channels[i] <- &message
 }
