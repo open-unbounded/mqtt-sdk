@@ -77,7 +77,7 @@ func newClient(conf config.PushConfig, clientID string) *pusher {
 	options.Store = mqtt.NewFileStore(conf.FileStoreDirPrefix + clientID)
 	cli := mqtt.NewClient(options)
 	if connect := cli.Connect(); connect.Wait() && connect.Error() != nil {
-		panic(connect.Wait())
+		panic(connect.Error())
 	}
 
 	channels := make([]chan *Message, 0, conf.Pushers)
