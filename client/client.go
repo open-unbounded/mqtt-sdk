@@ -22,19 +22,20 @@ type (
 	}
 
 	pusher struct {
-		cli        mqtt.Client
-		pushers    *threading.RoutineGroup
-		channels   []chan *Message
-		size       int64
-		stopChan   chan struct{}
-		doStopOnce sync.Once
-		metrics    *stat.Metrics
+		cli             mqtt.Client
+		pushers         *threading.RoutineGroup
+		channels        []chan *Message
+		size            int64
+		stopChan        chan struct{}
+		doStopOnce      sync.Once
+		metrics         *stat.Metrics
+		pushDoneHandler func(message *Message, err error)
 	}
 )
 
 var metrics = stat.NewMetrics("pusher")
 
-func NewPusher(c config.PushConfig) *Pusher {
+func NewPusher(c config.PushConfig, opts ...PusherOption) *Pusher {
 	if c.Conns < 1 {
 		c.Conns = 1
 	}
@@ -42,9 +43,14 @@ func NewPusher(c config.PushConfig) *Pusher {
 		c.Pushers = 8
 	}
 
+	op := new(pusherOptions)
+	for _, opt := range opts {
+		opt(op)
+	}
+
 	cli := &Pusher{group: service.NewServiceGroup()}
 	for i := 0; i < c.Conns; i++ {
-		cli.clients = append(cli.clients, newPusher(c, c.ClientIdPrefix+strconv.Itoa(i)))
+		cli.clients = append(cli.clients, newPusher(c, c.ClientIdPrefix+strconv.Itoa(i), op))
 	}
 
 	return cli
@@ -68,7 +74,7 @@ func (p *Pusher) Add(message Message) {
 	p.clients[i].Add(message)
 }
 
-func newPusher(conf config.PushConfig, clientID string) *pusher {
+func newPusher(conf config.PushConfig, clientID string, op *pusherOptions) *pusher {
 	options := mqtt.NewClientOptions()
 	for _, broker := range conf.Brokers {
 		options.AddBroker(broker)
@@ -91,10 +97,11 @@ func newPusher(conf config.PushConfig, clientID string) *pusher {
 	}
 
 	c := &pusher{
-		cli:      cli,
-		channels: channels,
-		stopChan: make(chan struct{}),
-		pushers:  threading.NewRoutineGroup(),
+		cli:             cli,
+		channels:        channels,
+		stopChan:        make(chan struct{}),
+		pushers:         threading.NewRoutineGroup(),
+		pushDoneHandler: op.pushDoneHandler,
 	}
 
 	return c
@@ -111,12 +118,18 @@ func (p *pusher) startPusher() {
 					logx.Infow("待发送的数据", logx.Field("data", msg.String()))
 					token := p.cli.Publish(msg.Topic, msg.Qos, msg.Retained, msg.Payload)
 					task := stat.Task{}
+					var err error
 					if token.Wait() && token.Error() != nil {
-						logx.Error(token.Error())
+						err = token.Error()
+						logx.Error(err)
 						task.Drop = true
 					}
-					task.Duration = timex.Since(startTime)
 
+					if p.pushDoneHandler != nil {
+						p.pushDoneHandler(msg, err)
+					}
+
+					task.Duration = timex.Since(startTime)
 					metrics.Add(task)
 				}
 			},
