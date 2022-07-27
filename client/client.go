@@ -9,7 +9,9 @@ import (
 	"github.com/open-unbounded/mqtt-sdk/config"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/service"
+	"github.com/zeromicro/go-zero/core/stat"
 	"github.com/zeromicro/go-zero/core/threading"
+	"github.com/zeromicro/go-zero/core/timex"
 )
 
 type (
@@ -26,8 +28,11 @@ type (
 		size       int64
 		stopChan   chan struct{}
 		doStopOnce sync.Once
+		metrics    *stat.Metrics
 	}
 )
+
+var metrics = stat.NewMetrics("pusher")
 
 func NewPusher(c config.PushConfig) *Pusher {
 	if c.Conns < 1 {
@@ -39,7 +44,7 @@ func NewPusher(c config.PushConfig) *Pusher {
 
 	cli := &Pusher{group: service.NewServiceGroup()}
 	for i := 0; i < c.Conns; i++ {
-		cli.clients = append(cli.clients, newClient(c, c.ClientIdPrefix+strconv.Itoa(i)))
+		cli.clients = append(cli.clients, newPusher(c, c.ClientIdPrefix+strconv.Itoa(i)))
 	}
 
 	return cli
@@ -63,7 +68,7 @@ func (p *Pusher) Add(message Message) {
 	p.clients[i].Add(message)
 }
 
-func newClient(conf config.PushConfig, clientID string) *pusher {
+func newPusher(conf config.PushConfig, clientID string) *pusher {
 	options := mqtt.NewClientOptions()
 	for _, broker := range conf.Brokers {
 		options.AddBroker(broker)
@@ -101,11 +106,18 @@ func (p *pusher) startPusher() {
 		p.pushers.Run(
 			func() {
 				for msg := range channel {
+					startTime := timex.Now()
+
 					logx.Infow("待发送的数据", logx.Field("data", msg.String()))
 					token := p.cli.Publish(msg.Topic, msg.Qos, msg.Retained, msg.Payload)
+					task := stat.Task{}
 					if token.Wait() && token.Error() != nil {
 						logx.Error(token.Error())
+						task.Drop = true
 					}
+					task.Duration = timex.Since(startTime)
+
+					metrics.Add(task)
 				}
 			},
 		)
