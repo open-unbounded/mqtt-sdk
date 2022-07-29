@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/cespare/xxhash v1.1.0 // indirect
+	github.com/chenquan/orderhash v0.0.0-20220728132644-5043de27e949 // indirect
 	github.com/eclipse/paho.mqtt.golang v1.4.1 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/zeromicro/go-zero v1.3.5 // indirect
