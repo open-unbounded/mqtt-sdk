@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/cespare/xxhash"
+	"github.com/chenquan/orderhash"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/open-unbounded/mqtt-sdk/config"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -16,9 +17,11 @@ import (
 
 type (
 	Pusher struct {
-		clients []*pusher
-		group   *service.ServiceGroup
-		size    int64
+		clients       []*pusher
+		group         *service.ServiceGroup
+		size          int64
+		hash64        func(b []byte) uint64
+		routeHashFunc func([]byte) uint64
 	}
 
 	pusher struct {
@@ -30,6 +33,7 @@ type (
 		doStopOnce      sync.Once
 		metrics         *stat.Metrics
 		pushDoneHandler func(message *Message, err error)
+		hash64          func(b []byte) uint64
 	}
 )
 
@@ -48,7 +52,7 @@ func NewPusher(c config.PushConfig, opts ...PusherOption) *Pusher {
 		opt(op)
 	}
 
-	cli := &Pusher{group: service.NewServiceGroup()}
+	cli := &Pusher{group: service.NewServiceGroup(), hash64: orderhash.Hash64(xxhash.Sum64)}
 	for i := 0; i < c.Conns; i++ {
 		cli.clients = append(cli.clients, newPusher(c, c.ClientIdPrefix+strconv.Itoa(i), op))
 	}
@@ -69,7 +73,12 @@ func (p *Pusher) Stop() {
 }
 
 func (p *Pusher) Add(message Message) {
-	hashCode := xxhash.Sum64String(message.Topic)
+	routeHashFunc := p.hash64
+	if p.routeHashFunc != nil {
+		routeHashFunc = p.routeHashFunc
+	}
+
+	hashCode := routeHashFunc([]byte(message.Topic))
 	i := hashCode % uint64(len(p.clients))
 	p.clients[i].Add(message)
 }
@@ -102,6 +111,7 @@ func newPusher(conf config.PushConfig, clientID string, op *pusherOptions) *push
 		stopChan:        make(chan struct{}),
 		pushers:         threading.NewRoutineGroup(),
 		pushDoneHandler: op.pushDoneHandler,
+		hash64:          orderhash.Hash64(xxhash.Sum64),
 	}
 
 	return c
@@ -156,7 +166,7 @@ func (p *pusher) Stop() {
 }
 
 func (p *pusher) Add(message Message) {
-	hashCode := xxhash.Sum64String(message.Topic)
+	hashCode := p.hash64([]byte(message.Topic))
 	i := hashCode % uint64(len(p.channels))
 	p.channels[i] <- &message
 }
