@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"strconv"
 	"sync"
 
@@ -14,6 +15,8 @@ import (
 	"github.com/zeromicro/go-zero/core/threading"
 	"github.com/zeromicro/go-zero/core/timex"
 )
+
+var metrics = stat.NewMetrics("pusher")
 
 type (
 	Pusher struct {
@@ -36,8 +39,6 @@ type (
 		hash64          func(b []byte) uint64
 	}
 )
-
-var metrics = stat.NewMetrics("pusher")
 
 func NewPusher(c config.PushConfig, opts ...PusherOption) *Pusher {
 	if c.Conns < 1 {
@@ -112,6 +113,7 @@ func newPusher(conf config.PushConfig, clientID string, op *pusherOptions) *push
 		pushers:         threading.NewRoutineGroup(),
 		pushDoneHandler: op.pushDoneHandler,
 		hash64:          orderhash.Hash64(xxhash.Sum64),
+		metrics:         stat.NewMetrics(fmt.Sprintf("pusher(%s)", clientID)),
 	}
 
 	return c
@@ -140,7 +142,9 @@ func (p *pusher) startPusher() {
 					}
 
 					task.Duration = timex.Since(startTime)
+
 					metrics.Add(task)
+					p.metrics.Add(task)
 				}
 			},
 		)
