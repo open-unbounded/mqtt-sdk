@@ -127,13 +127,12 @@ func (p *pusher) startPusher() {
 				for msg := range channel {
 					startTime := timex.Now()
 
-					logx.Infow("待发送的数据", logx.Field("data", msg.String()))
 					token := p.cli.Publish(msg.Topic, msg.Qos, msg.Retained, msg.Payload)
 					task := stat.Task{}
 					var err error
 					if token.Wait() && token.Error() != nil {
 						err = token.Error()
-						logx.Error(err)
+						logx.Errorw("数据发送失败", logx.Field("data", msg.String()), logx.Field("err", err))
 						task.Drop = true
 					}
 
@@ -142,7 +141,6 @@ func (p *pusher) startPusher() {
 					}
 
 					task.Duration = timex.Since(startTime)
-
 					metrics.Add(task)
 					p.metrics.Add(task)
 				}
