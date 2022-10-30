@@ -6,7 +6,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/chenquan/orderhash v0.2.1
 	github.com/eclipse/paho.mqtt.golang v1.4.2
-	github.com/zeromicro/go-zero v1.4.1
+	github.com/zeromicro/go-zero v1.4.2
 )
 
 require (
@@ -28,22 +28,22 @@ require (
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
-	go.opentelemetry.io/otel v1.10.0 // indirect
-	go.opentelemetry.io/otel/exporters/jaeger v1.10.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.10.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.10.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.10.0 // indirect
-	go.opentelemetry.io/otel/exporters/zipkin v1.10.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.10.0 // indirect
-	go.opentelemetry.io/otel/trace v1.10.0 // indirect
+	go.opentelemetry.io/otel v1.11.0 // indirect
+	go.opentelemetry.io/otel/exporters/jaeger v1.11.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.11.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.11.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.11.0 // indirect
+	go.opentelemetry.io/otel/exporters/zipkin v1.11.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.11.0 // indirect
+	go.opentelemetry.io/otel/trace v1.11.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.19.0 // indirect
 	go.uber.org/automaxprocs v1.5.1 // indirect
 	golang.org/x/net v0.0.0-20220531201128-c960675eff93 // indirect
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
-	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
+	golang.org/x/sys v0.0.0-20220919091848-fb04ddd9f9c8 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/genproto v0.0.0-20220602131408-e326c6e8e9c8 // indirect
-	google.golang.org/grpc v1.49.0 // indirect
+	google.golang.org/grpc v1.50.1 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
