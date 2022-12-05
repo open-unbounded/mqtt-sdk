@@ -3,7 +3,7 @@ module github.com/open-unbounded/mqtt-sdk
 go 1.18
 
 require (
-	github.com/cespare/xxhash/v2 v2.1.2
+	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/chenquan/orderhash v0.2.1
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/zeromicro/go-zero v1.4.2
